@@ -1,0 +1,108 @@
+🎮 Game Specification: Number Breakdown Animal Feeding Game
+📌 Objective
+
+Create an educational game that teaches children how to break down numbers into smaller equations.
+The learning focus is number decomposition (e.g., 8 → 4+4, 6+2, 2+3+1+2).
+The metaphor: feeding animals in a shelter with treats (fish for cats, bones for dogs).
+
+🐾 Game Modes
+
+Single Number Breakdown (Default start mode)
+
+The game provides one number (e.g., 5).
+
+The player must distribute that many treats across animals.
+
+At least 2 animals are always created.
+
+UI example (Case 1 in mock):
+
+Top: “We have 5 fish to share.”
+
+Treats displayed visually.
+
+Tree breakdown: player assigns treats → result shown (e.g., 3+2=5).
+
+Equation Breakdown
+
+The game provides a simple addition equation (e.g., 2+3).
+
+Dogs = first number → bones.
+
+Cats = second number → fish.
+
+Player must feed both groups separately.
+
+UI example (Case 2 in mock):
+
+Left side = dogs with bones.
+
+Right side = cats with fish.
+
+Tree breakdown shows how each part of the equation is fed (2+3=5).
+
+Mixed Mode (Default mode)
+
+Alternates between Single Number and Equation cases.
+
+The first round always starts with Single Number Breakdown.
+
+🧩 Gameplay Rules
+
+Animal Count
+
+Default = 3 animals.
+
+Configurable = fixed number OR “Random.”
+
+Random range = 1 → target number.
+
+Example: target 5 → between 1 and 5 animals can spawn.
+
+Treat Distribution
+
+Player assigns treats visually (drag & drop or click-to-assign).
+
+The sum of treats must match the given number (or equation parts).
+
+Correct solution = tree structure displays equation (e.g., “3+2=5”) + celebration.
+
+⚙️ Configuration Options
+
+Game Mode: Single, Equation, or Mixed.
+
+Animal Count: Fixed (default = 3) or Random (1 → target number).
+
+🌟 Learning Value
+
+Visualizes number decomposition through tree diagrams.
+
+Builds understanding of additive equations step by step.
+
+Encourages exploration of multiple valid solutions.
+
+Uses animals and treats to reduce anxiety and make math playful.
+
+🎨 UI & Visual Structure
+
+Case 1 – Single Number Breakdown
+
+Header: “We have X treats to share.”
+
+Treats displayed in a row.
+
+Tree structure showing how treats are split among animals.
+
+Example: 5 fish split → Dog gets 3, Cat gets 2 → “3+2=5.”
+
+Case 2 – Equation Breakdown
+
+Header: “We need to feed the cats and dogs.”
+
+Dogs shown with bones = first number in equation.
+
+Cats shown with fish = second number in equation.
+
+Tree structure shows breakdown.
+
+Example: 2 bones → dog, 3 fish → cats → “2+3=5.”

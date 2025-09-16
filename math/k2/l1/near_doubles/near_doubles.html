@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cat, Dog, Mouse — Near Doubles (v1.2.6)</title>
+  <style>
+    :root {
+      --bg: #f7faf9;
+      --card: #ffffff;
+      --ink: #1f2937;      /* gray-800 */
+      --muted: #6b7280;    /* gray-500/600 */
+      --border: #d1d5db;   /* gray-300 */
+      --good-b: #86efac;   /* emerald-300 */
+      --good-bg:#ecfdf5;   /* emerald-50 */
+      --good-ink:#065f46;  /* emerald-800 */
+      --bad-b:  #fca5a5;   /* red-300 */
+      --bad-bg: #fef2f2;   /* red-50 */
+      --bad-ink:#7f1d1d;   /* red-800 */
+      --accent:#10b981;    /* emerald-500/600 */
+      --indigo-b:#c7d2fe;  /* indigo-200 */
+      --indigo-bg:#eef2ff; /* indigo-50 */
+      --indigo-ink:#3730a3;/* indigo-700 */
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; color: var(--ink); background: var(--bg); }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; align-items: center; }
+    h1 { font-size: 24px; margin: 0; font-weight: 800; }
+
+    /* details summary */
+    details { width: 100%; max-width: 720px; }
+    details > summary { list-style: none; border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; font-size: 14px; font-weight: 600; background: #f9fafb; cursor: pointer; }
+    details[open] > summary { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+    details > .panel { border: 1px solid var(--border); border-top: 0; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; background: #fff; padding: 14px; color: var(--ink); }
+    .panel ol, .panel ul { margin: 8px 0 0 18px; }
+    .muted { color: var(--muted); }
+
+    /* Sections */
+    .section { width: 100%; max-width: 900px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 12px; }
+    .section .title { font-size: 14px; font-weight: 700; color: #374151; margin: 0 0 8px; }
+
+    /* equation header */
+    .equation { font-size: 28px; font-weight: 900; padding: 8px 14px; border-radius: 12px; border: 1px solid #a7f3d0; background: #ecfdf5; color: #047857; }
+
+    /* fix banner */
+    .fix-banner { font-size: 18px; font-weight: 800; padding: 8px 14px; border-radius: 12px; border: 1px solid var(--indigo-b); background: var(--indigo-bg); color: var(--indigo-ink); }
+
+    /* input row */
+    .input-cluster { width: 100%; max-width: 900px; display: flex; flex-direction: column; gap: 8px; }
+    .input-row { overflow-x: auto; }
+    .input-row-inner { display: grid; grid-auto-flow: column; grid-auto-columns: max-content; align-items: center; gap: 8px; }
+    input[type="text"], select { padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; font-size: 14px; width: 100%; }
+    .w-28 { width: 7rem; }
+    .w-36 { width: 9rem; }
+    .w-48 { width: 12rem; }
+    button { padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: #fff; cursor: pointer; font-weight: 600; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button:hover:not(:disabled) { background: #f9fafb; }
+
+    /* dots panel */
+    .dots { display: grid; gap: 6px; font-size: 14px; }
+    .dotline { display: flex; align-items: center; gap: 8px; }
+    .dotwrap { display: flex; flex-wrap: wrap; gap: 4px; }
+    .dot { width: 12px; height: 12px; border-radius: 999px; background: #34d399; }
+
+    /* layout row */
+    .grid7 { width: 100%; max-width: 1000px; display: grid; grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr; gap: 10px; align-items: center; justify-items: center; }
+    @media (max-width: 980px) {
+      .grid7 { grid-template-columns: 1fr; }
+    }
+
+    /* card primitives */
+    .box { position: relative; width: 190px; min-height: 170px; border: 2px solid var(--border); border-radius: 16px; padding: 10px; background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 8px; align-items: center; }
+    .box.neutral { border-color: var(--border); background: #fff; color: var(--ink); }
+    .box.good    { border-color: var(--good-b); background: var(--good-bg); color: var(--good-ink); }
+    .box.bad     { border-color: var(--bad-b);  background: var(--bad-bg);  color: var(--bad-ink); }
+    .box .icon { font-size: 22px; }
+    .box .label { font-size: 13px; color: var(--muted); text-align: center; }
+    .box .count { font-size: 28px; font-weight: 800; line-height: 1; }
+    .small { font-size: 12px; color: var(--muted); font-weight: 700; }
+    .corner { position: absolute; top: 6px; right: 6px; font-size: 20px; opacity: 0; transform: scale(0.9); transition: 200ms ease; }
+    .box.good .corner.show { opacity: 1; transform: scale(1); }
+
+    .sign { font-size: 34px; font-weight: 900; }
+
+    .status { font-size: 14px; }
+    .status .ok { color: #047857; font-weight: 700; }
+    .status .bad { color: #b91c1c; font-weight: 700; }
+
+    .cele { padding: 10px 12px; border: 1px solid #a7f3d0; background: #ecfdf5; color: #065f46; border-radius: 12px; }
+
+    .error { color: #b91c1c; font-size: 13px; }
+
+    .divider { width: 1px; height: 20px; background: #e5e7eb; margin: 0 6px; }
+  </style>
+</head>
+<body>
+  <div class="wrap" id="app">
+    <!-- TITLE -->
+    <h1>Cat 🐱, Dog 🐶, Mouse 🐭 — Near Doubles</h1>
+
+    <!-- INSTRUCTIONS (collapsed by default) -->
+    <details>
+      <summary>See instructions</summary>
+      <div class="panel" id="instructions">
+        <div style="font-weight:700">How to play (for 2nd graders)</div>
+        <ol id="howto-list">
+          <li>Read the problem at the top (for example: <span id="inst-eq">6 + 7</span>).</li>
+          <li>Give <span id="inst-smaller-a">6</span> cookies to the Cat and <span id="inst-smaller-b">6</span> cupcakes to the Dog.</li>
+          <li>Give 1 cheese to the Mouse.</li>
+          <li>Count all the treats together. That total is the answer!</li>
+        </ol>
+        <div style="font-weight:700;margin-top:6px">Why we do this</div>
+        <p>Near doubles are friendly because you can use a double you know (like 5 + 5 = 10) and then add one more. This makes adding faster and helps your brain see number patterns.</p>
+        <div style="font-weight:700;margin-top:6px">Tips</div>
+        <ul>
+          <li>If the number turns red, there are too many treats — take some away.</li>
+          <li>Watch for the small check marks when Cat and Dog have the right amounts.</li>
+          <li>A star appears when your total matches the target — nice!</li>
+        </ul>
+      </div>
+    </details>
+
+    <!-- EQUATION HEADER -->
+    <div class="equation" id="eqHeader">Solve: 6 + 7 = ?</div>
+
+    <!-- FIX BANNER (only on Fix It rounds) -->
+    <div id="fixBanner" class="fix-banner" style="display:none;">Is this correct?</div>
+
+    <!-- INPUT + MORE OPTIONS -->
+    <div class="input-cluster">
+      <!-- Row 1: equation + buttons (scrollable on small screens) -->
+      <div class="input-row">
+        <div class="input-row-inner">
+          <input type="text" id="eqInput" class="w-28" placeholder="6+7" />
+          <button id="applyBtn">✏️ Set equation</button>
+          <button id="randomBtn">🎲 Random near-double</button>
+        </div>
+      </div>
+      <!-- Row 2: compact More options -->
+      <details>
+        <summary class="muted" style="border:1px solid var(--border); border-radius:10px; padding:6px 10px; background:#fff; font-size:12px; font-weight:600; cursor:pointer;">More options</summary>
+        <div style="border:1px solid var(--border); border-top:0; border-bottom-left-radius:10px; border-bottom-right-radius:10px; background:#fff; padding:10px;">
+          <div style="display:grid; grid-auto-flow:column; grid-auto-columns:max-content; gap:8px; align-items:center; font-size:14px;">
+            <label class="muted" style="font-size:12px;">Focus set</label>
+            <select id="focusSet">
+              <option value="normal">Normal</option>
+              <option value="advanced">Advanced</option>
+            </select>
+            <span class="divider" aria-hidden></span>
+            <label class="muted" style="font-size:12px;">Mode</label>
+            <select id="modeSel">
+              <option value="mixed">Mixed</option>
+              <option value="build">Build It</option>
+              <option value="fix">Fix It</option>
+            </select>
+          </div>
+        </div>
+      </details>
+    </div>
+    <div id="error" class="error"></div>
+
+    <!-- DOTS MIRROR -->
+    <div class="section">
+      <div class="dots">
+        <div class="dotline">🐱 <div id="catDots" class="dotwrap"></div></div>
+        <div class="dotline">🐶 <div id="dogDots" class="dotwrap"></div></div>
+        <div class="dotline">🐭 <div id="mouseDots" class="dotwrap"></div></div>
+      </div>
+    </div>
+
+    <!-- ANIMAL ROW -->
+    <div class="grid7">
+      <!-- Cat -->
+      <div id="catBox" class="box neutral">
+        <div class="icon" aria-hidden>🐱</div>
+        <div id="catLabel" class="label">Cat gets 6 cookies</div>
+        <div style="display:flex; gap:8px;">
+          <button id="catAdd">+ add</button>
+          <button id="catSub">−</button>
+        </div>
+        <div id="catSymbols" style="font-size:28px; user-select:none;"></div>
+        <div class="small" id="catCount">0/6</div>
+        <div class="corner" id="catCorner" aria-label="Cat reached goal">✅</div>
+      </div>
+
+      <div class="sign">+</div>
+
+      <!-- Dog -->
+      <div id="dogBox" class="box neutral">
+        <div class="icon" aria-hidden>🐶</div>
+        <div id="dogLabel" class="label">Dog gets 6 cupcakes</div>
+        <div style="display:flex; gap:8px;">
+          <button id="dogAdd">+ add</button>
+          <button id="dogSub">−</button>
+        </div>
+        <div id="dogSymbols" style="font-size:28px; user-select:none;"></div>
+        <div class="small" id="dogCount">0/6</div>
+        <div class="corner" id="dogCorner" aria-label="Dog reached goal">✅</div>
+      </div>
+
+      <div class="sign">+</div>
+
+      <!-- Mouse -->
+      <div id="mouseBox" class="box neutral">
+        <div class="icon" aria-hidden>🐭</div>
+        <div class="label">Mouse gets +1 cheese</div>
+        <div style="display:flex; gap:8px;">
+          <button id="mouseAdd">+ add</button>
+          <button id="mouseSub">−</button>
+        </div>
+        <div id="mouseSymbols" style="font-size:28px; user-select:none;"></div>
+        <div class="small" id="mouseCount">0/1</div>
+        <div class="corner" id="mouseCorner" aria-label="Mouse reached goal">✅</div>
+        <div id="mouseHint" class="small">The Mouse will get the last snack!</div>
+      </div>
+
+      <div class="sign">=</div>
+
+      <!-- Result -->
+      <div id="resultBox" class="box neutral">
+        <div class="label">Result</div>
+        <div id="resultTotal" class="count">0</div>
+        <div class="small" id="resultTarget">Target: 13</div>
+        <div class="corner" id="resultCorner" aria-label="total matches target">🌟</div>
+      </div>
+    </div>
+
+    <!-- STATUS -->
+    <div id="status" class="status">Target: <span id="statusTarget">13</span> · Result: <span id="statusResult">0</span></div>
+
+    <!-- CELEBRATION -->
+    <div id="cele" class="cele" style="display:none;"></div>
+
+    <div class="muted" style="margin-top:10px; font-size:12px;">Version v1.2.6 (2025-09-10)</div>
+  </div>
+
+  <script>
+    (function(){
+      const VERSION = 'v1.2.6 (2025-09-10)';
+
+      // ---------- helpers ----------
+      function parseEquation(input){
+        const cleaned = String(input || '').replace(/\s+/g, '');
+        const m = cleaned.match(/^(\d{1,2})\+(\d{1,2})$/);
+        if (!m) return null;
+        return { x: parseInt(m[1],10), y: parseInt(m[2],10) };
+      }
+      function pickNearDouble(kind){
+        const pool = kind === 'advanced' ? [6,7,8,9] : [2,3,4,5,6,7];
+        const s = pool[Math.floor(Math.random()*pool.length)];
+        const pair = Math.random() < 0.5 ? [s, s+1] : [s+1, s];
+        return { a: pair[0], b: pair[1] };
+      }
+
+      // ---------- audio ----------
+      const audio = { ctx: null };
+      function chime(){
+        try{
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if(!Ctx) return;
+          if(!audio.ctx) audio.ctx = new Ctx();
+          const ctx = audio.ctx;
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.type = 'sine'; o.frequency.value = 880;
+          o.connect(g); g.connect(ctx.destination);
+          const now = ctx.currentTime;
+          g.gain.setValueAtTime(0.0001, now);
+          g.gain.exponentialRampToValueAtTime(0.2, now + 0.03);
+          g.gain.exponentialRampToValueAtTime(0.00001, now + 0.25);
+          o.start(now); o.stop(now + 0.3);
+        }catch(e){}
+      }
+
+      // ---------- state ----------
+      const state = {
+        setKind: 'normal',
+        mode: 'mixed',         // mixed | build | fix
+        roundType: 'build',    // actual for current puzzle
+        firstLoad: true,
+        a: 6, b: 7,
+        cat: 0, dog: 0, mouse: 0,
+        error: '',
+        chimed: { cat:false, dog:false, mouse:false },
+      };
+
+      // ---------- dom ----------
+      const eqHeader = document.getElementById('eqHeader');
+      const fixBanner = document.getElementById('fixBanner');
+
+      const eqInput = document.getElementById('eqInput');
+      const applyBtn = document.getElementById('applyBtn');
+      const randomBtn = document.getElementById('randomBtn');
+      const focusSet = document.getElementById('focusSet');
+      const modeSel  = document.getElementById('modeSel');
+      const errorEl  = document.getElementById('error');
+
+      const catDots = document.getElementById('catDots');
+      const dogDots = document.getElementById('dogDots');
+      const mouseDots = document.getElementById('mouseDots');
+
+      const catBox = document.getElementById('catBox');
+      const dogBox = document.getElementById('dogBox');
+      const mouseBox = document.getElementById('mouseBox');
+      const resultBox = document.getElementById('resultBox');
+
+      const catLabel = document.getElementById('catLabel');
+      const dogLabel = document.getElementById('dogLabel');
+      const catSymbols = document.getElementById('catSymbols');
+      const dogSymbols = document.getElementById('dogSymbols');
+      const mouseSymbols = document.getElementById('mouseSymbols');
+      const catCount = document.getElementById('catCount');
+      const dogCount = document.getElementById('dogCount');
+      const mouseCount = document.getElementById('mouseCount');
+      const catCorner = document.getElementById('catCorner');
+      const dogCorner = document.getElementById('dogCorner');
+      const mouseCorner = document.getElementById('mouseCorner');
+      const mouseHint = document.getElementById('mouseHint');
+
+      const resultTotal = document.getElementById('resultTotal');
+      const resultTarget = document.getElementById('resultTarget');
+      const resultCorner = document.getElementById('resultCorner');
+
+      const statusTarget = document.getElementById('statusTarget');
+      const statusResult = document.getElementById('statusResult');
+      const cele = document.getElementById('cele');
+
+      const instEq = document.getElementById('inst-eq');
+      const instSa = document.getElementById('inst-smaller-a');
+      const instSb = document.getElementById('inst-smaller-b');
+
+      const catAdd = document.getElementById('catAdd');
+      const catSub = document.getElementById('catSub');
+      const dogAdd = document.getElementById('dogAdd');
+      const dogSub = document.getElementById('dogSub');
+      const mouseAdd = document.getElementById('mouseAdd');
+      const mouseSub = document.getElementById('mouseSub');
+
+      // ---------- helpers ----------
+      function smaller(){ return Math.min(state.a, state.b); }
+      function target(){ return state.a + state.b; }
+      function total(){ return state.cat + state.dog + state.mouse; }
+      function allDone(){ return state.cat===smaller() && state.dog===smaller() && state.mouse===1; }
+      function mouseEnabled(){ return state.cat===smaller() && state.dog===smaller() && state.mouse < 1; }
+
+      function setBoxIntent(el, intent){
+        el.classList.remove('neutral','good','bad');
+        el.classList.add(intent);
+      }
+
+      function resetCountsForRound(){
+        const big = Math.max(state.a, state.b);
+        if (state.roundType === 'fix') {
+          state.cat = big; state.dog = big; state.mouse = 1;
+        } else {
+          state.cat = 0; state.dog = 0; state.mouse = 0;
+        }
+        state.error = '';
+        state.chimed = { cat:false, dog:false, mouse:false };
+      }
+
+      function chooseRoundType(){
+        if (state.firstLoad) {
+          state.roundType = 'build';
+          state.firstLoad = false;
+        } else if (state.mode === 'mixed') {
+          state.roundType = Math.random() < 0.5 ? 'build' : 'fix';
+        } else {
+          state.roundType = state.mode; // build or fix
+        }
+      }
+
+      function restage(){
+        chooseRoundType();
+        resetCountsForRound();
+        render();
+      }
+
+      // ---------- render ----------
+      function render(){
+        const s = smaller();
+        const t = target();
+        const tot = total();
+
+        // headers
+        eqHeader.textContent = `Solve: ${state.a} + ${state.b} = ?`;
+        fixBanner.style.display = state.roundType === 'fix' ? 'block' : 'none';
+
+        // instructions
+        instEq.textContent = `${state.a} + ${state.b}`;
+        instSa.textContent = s; instSb.textContent = s;
+
+        // labels
+        catLabel.textContent = `Cat gets ${s} cookies`;
+        dogLabel.textContent = `Dog gets ${s} cupcakes`;
+
+        // symbols
+        catSymbols.innerHTML = '🍪'.repeat(state.cat);
+        dogSymbols.innerHTML = '🧁'.repeat(state.dog);
+        mouseSymbols.innerHTML = '🧀'.repeat(state.mouse);
+
+        // dots mirror
+        catDots.innerHTML = Array.from({length: state.cat}).map(()=>'<span class="dot"></span>').join('');
+        dogDots.innerHTML = Array.from({length: state.dog}).map(()=>'<span class="dot"></span>').join('');
+        mouseDots.innerHTML = Array.from({length: state.mouse}).map(()=>'<span class="dot"></span>').join('');
+
+        // counts
+        catCount.textContent = `${state.cat}/${s}`;
+        dogCount.textContent = `${state.dog}/${s}`;
+        mouseCount.textContent = `${state.mouse}/1`;
+
+        // intents
+        const catIntent = state.cat === s ? 'good' : state.cat > s ? 'bad' : 'neutral';
+        const dogIntent = state.dog === s ? 'good' : state.dog > s ? 'bad' : 'neutral';
+        const mouseIntent = state.mouse === 1 ? 'good' : state.mouse > 1 ? 'bad' : 'neutral';
+        const resIntent = tot === t ? 'good' : tot > t ? 'bad' : 'neutral';
+        setBoxIntent(catBox, catIntent);
+        setBoxIntent(dogBox, dogIntent);
+        setBoxIntent(mouseBox, mouseIntent);
+        setBoxIntent(resultBox, resIntent);
+
+        // corner icons
+        catCorner.classList.toggle('show', state.cat === s);
+        dogCorner.classList.toggle('show', state.dog === s);
+        mouseCorner.classList.toggle('show', state.mouse === 1);
+        resultCorner.classList.toggle('show', tot === t);
+
+        // one-time chimes
+        if (state.cat === s && !state.chimed.cat) { chime(); state.chimed.cat = true; }
+        if (state.cat !== s) state.chimed.cat = false;
+        if (state.dog === s && !state.chimed.dog) { chime(); state.chimed.dog = true; }
+        if (state.dog !== s) state.chimed.dog = false;
+        if (state.mouse === 1 && !state.chimed.mouse) { chime(); state.chimed.mouse = true; }
+        if (state.mouse !== 1) state.chimed.mouse = false;
+
+        // result panel
+        resultTotal.textContent = String(tot);
+        resultTarget.textContent = `Target: ${t}`;
+
+        // status
+        statusTarget.textContent = String(t);
+        statusResult.textContent = String(tot);
+        statusResult.className = '';
+        if (tot === t) statusResult.classList.add('ok');
+        else if (tot > t) statusResult.classList.add('bad');
+
+        // mouse gating
+        const enabled = mouseEnabled();
+        mouseAdd.disabled = !enabled;
+        mouseHint.style.display = enabled ? 'none' : 'block';
+
+        // celebration
+        if (allDone()) {
+          cele.style.display = 'block';
+          cele.textContent = `🎉 ${state.a}+${state.b} = ${t}. → ${s} + ${s} + 1`;
+        } else {
+          cele.style.display = 'none';
+        }
+
+        // error
+        errorEl.textContent = state.error || '';
+      }
+
+      // ---------- actions ----------
+      function setFromNumbers(x, y){
+        if (x < 1 || y < 1 || x + y > 20) { state.error = 'Try numbers between 1 and 20, with a friendly total.'; render(); return; }
+        if (Math.abs(x - y) !== 1) { state.error = 'This game focuses on near doubles. Please enter numbers that differ by 1 (e.g., 6+7).'; render(); return; }
+        state.a = x; state.b = y; restage();
+      }
+
+      // ---------- events ----------
+      focusSet.addEventListener('change', (e)=>{
+        state.setKind = e.target.value;
+        const {a,b} = pickNearDouble(state.setKind);
+        state.a = a; state.b = b; restage();
+      });
+
+      modeSel.addEventListener('change', (e)=>{
+        state.mode = e.target.value; restage();
+      });
+
+      applyBtn.addEventListener('click', ()=>{
+        const parsed = parseEquation(eqInput.value);
+        if (!parsed) { state.error = 'Type an equation like 6+7'; render(); return; }
+        setFromNumbers(parsed.x, parsed.y);
+      });
+
+      randomBtn.addEventListener('click', ()=>{
+        const {a,b} = pickNearDouble(state.setKind);
+        state.a = a; state.b = b; restage();
+      });
+
+      eqInput.addEventListener('input', ()=>{ state.error=''; });
+
+      // Cat
+      catAdd.addEventListener('click', ()=>{ const cap = smaller() + 2; state.cat = Math.min(state.cat + 1, cap); render(); });
+      catSub.addEventListener('click', ()=>{ state.cat = Math.max(0, state.cat - 1); render(); });
+
+      // Dog
+      dogAdd.addEventListener('click', ()=>{ const cap = smaller() + 2; state.dog = Math.min(state.dog + 1, cap); render(); });
+      dogSub.addEventListener('click', ()=>{ state.dog = Math.max(0, state.dog - 1); render(); });
+
+      // Mouse
+      mouseAdd.addEventListener('click', ()=>{ if (!mouseEnabled()) return; const cap = 2; state.mouse = Math.min(state.mouse + 1, cap); render(); });
+      mouseSub.addEventListener('click', ()=>{ state.mouse = Math.max(0, state.mouse - 1); render(); });
+
+      // ---------- init ----------
+      const init = pickNearDouble(state.setKind);
+      state.a = init.a; state.b = init.b;
+      restage();
+
+      // ---------- lightweight dev tests (browser console) ----------
+      try {
+        const t1 = parseEquation('6+7');
+        console.assert(t1 && t1.x===6 && t1.y===7, 'parseEquation basic');
+        console.assert(parseEquation(' 3 + 4 ')?.x === 3, 'parseEquation whitespace');
+        console.assert(parseEquation('abc') === null, 'parseEquation invalid');
+
+        for (let i=0;i<12;i++){
+          const n = pickNearDouble('normal');
+          console.assert(Math.abs(n.a-n.b)===1, 'near-double normal');
+          console.assert([2,3,4,5,6,7].includes(Math.min(n.a,n.b)), 'normal pool');
+          const a = pickNearDouble('advanced');
+          console.assert(Math.abs(a.a-a.b)===1, 'near-double advanced');
+          console.assert([6,7,8,9].includes(Math.min(a.a,a.b)), 'advanced pool');
+        }
+        console.debug('[NearDouble v1.2.6 tests] OK');
+      } catch (e) { console.error('[NearDouble v1.2.6 tests] FAILED', e); }
+    })();
+  </script>
+</body>
+</html>

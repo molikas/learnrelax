@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Subtraction Strategies (Grade 2)</title>
+<style>
+  :root{
+    --bg:#f7fafc; --card:#ffffff; --ink:#0f172a; --muted:#6b7280; --good:#10b981; --accent:#6366f1; --accent2:#f59e0b; --line:#e5e7eb;
+  }
+  body{margin:0; font-family:system-ui, sans-serif; background:var(--bg); color:var(--ink)}
+  .wrap{max-width:980px; margin:0 auto; padding:16px}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; box-shadow:0 8px 20px rgba(0,0,0,.04)}
+  h1{font-size:clamp(20px,3.2vw,28px); margin:0 0 8px 0}
+  .sub{color:var(--muted); font-size:14px; margin-bottom:12px}
+
+  /* Controls */
+  .controls{display:flex; flex-wrap:wrap; gap:8px; margin:12px 0}
+  .btn{position:relative; overflow:hidden; padding:10px 14px; border-radius:12px; border:1px solid var(--line); background:#fff; cursor:pointer; font-weight:700; transition:transform .08s ease, box-shadow .2s ease, border-color .2s ease}
+  .btn.primary{background:var(--good); color:#fff; border-color:transparent}
+  .btn:active{transform:translateY(1px) scale(.985)}
+  .btn.pressed{transform:translateY(1px) scale(.985); box-shadow:0 0 0 6px rgba(99,102,241,.08) inset}
+  .btn:focus-visible{outline:3px solid rgba(99,102,241,.25); outline-offset:2px}
+  /* subtle ripple for step buttons */
+  .ripple{position:absolute; border-radius:50%; transform:scale(0); pointer-events:none; background:rgba(99,102,241,.18); animation:ripple .45s ease-out forwards}
+  @keyframes ripple{to{transform:scale(8); opacity:0}}
+
+  .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+
+  /* Equation (problem) */
+  .problem{display:flex; align-items:center; gap:12px; font-size:clamp(22px,4vw,36px); font-weight:800}
+  .result{font-weight:900; color:var(--good)} /* same size as equation (inherits) */
+
+  /* Progress section (larger & highlighted) */
+  .sep{height:1px; background:var(--line); margin:12px 0}
+  .subhdr{font-size:20px; color:#0f172a; margin:6px 0 10px; font-weight:900; letter-spacing:.2px}
+  .progressBox{background:#fffdf5; border:2px solid #fde68a; border-radius:14px; padding:12px}
+  .eqLive{margin:4px 0 10px; font-family:monospace; font-weight:900; font-size:20px; color:#0b3b2e}
+  .checklist{font-size:16px; color:#1f2937; display:block; margin:0}
+  .checklist .item{display:flex; align-items:center; gap:10px; margin:8px 0; flex-wrap:wrap}
+  .check{display:inline-grid; place-items:center; width:22px; height:22px; border:2px solid #cbd5e1; border-radius:6px; font-size:14px; font-weight:900}
+  .check.done{background:#d1fae5; border-color:#10b981; color:#065f46}
+  .cele{display:inline-flex; align-items:center; gap:6px; margin-left:8px; padding:4px 10px; border-radius:999px; font-weight:900; font-size:14px}
+  .cele.ten{background:#ecf2ff; color:#1e3a8a; border:1px solid #c7d2fe}
+  .cele.ans{background:#ecfccb; color:#166534; border:1px solid #bbf7d0}
+  /* Reserve space for celebration chips to avoid layout shift */
+  .celeReserve{min-height:56px; display:flex; flex-direction:column; gap:6px}
+  .hidden{visibility:hidden}
+
+  /* Number line */
+  .numberline{position:relative; border:1px solid var(--line); height:130px; border-radius:12px; background:#fff}
+  .nl-track{position:absolute; left:8px; right:8px; top:66%; height:2px; background:#cbd5e1}
+  .nl-ticks{position:absolute; left:8px; right:8px; top:66%; transform:translateY(-50%); display:flex; justify-content:space-between; font-size:13px; color:#374151}
+  .nl-ticks div{display:flex; flex-direction:column; align-items:center; position:relative}
+  .nl-ticks .tickbar{width:2px; height:10px; background:#94a3b8; margin-bottom:2px}
+  .nl-ticks .tick10{font-weight:900; position:relative}
+  .nl-cumulative{position:absolute; left:8px; right:8px; top:18%; height:22px; pointer-events:none; z-index:3}
+  .cumulativeBar{position:absolute; height:22px; background:rgba(16,185,129,.22); border:2px dashed rgba(16,185,129,.7); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:900; color:#065f46}
+  .nl-highlights{position:absolute; left:8px; right:8px; top:40%; height:24px; pointer-events:none; z-index:2}
+  .highlightBar{position:absolute; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; text-align:center}
+  .highlightBar.ten{background:rgba(99,102,241,.25); color:#3730a3}
+  .highlightBar.answer{background:rgba(245,158,11,.25); color:#92400e}
+  .hopper{position:absolute; top:36px; transform:translateX(-50%); transition:left .25s; font-size:26px; z-index:4}
+  .nl-flags{position:absolute; left:8px; right:8px; top:8px; height:24px; pointer-events:none; z-index:5}
+  .flag{position:absolute; transform:translateX(-50%); background:#fff; border:2px solid var(--good); color:#111; padding:2px 8px; border-radius:999px; font-size:13px; font-weight:800; white-space:nowrap; box-shadow:0 0 0 4px #fff, 0 2px 6px rgba(0,0,0,.06)}
+  .flag.answer{border-color:var(--good)}
+  .flag.answer::after{content:""; position:absolute; left:50%; transform:translateX(-50%); top:100%; width:2px; height:10px; background:var(--good); border-radius:1px}
+
+  /* Milestone bursts */
+  .burst{position:absolute; top:44%; transform:translate(-50%,-50%); width:0; height:0; border-radius:999px; background:rgba(99,102,241,.2); box-shadow:0 0 0 0 rgba(99,102,241,.5); pointer-events:none; animation:burst 900ms ease-out forwards}
+  @keyframes burst{0%{width:0;height:0;opacity:1;box-shadow:0 0 0 0 rgba(99,102,241,.5)}70%{box-shadow:0 0 0 18px rgba(99,102,241,.0)}100%{width:130px;height:130px;opacity:0}}
+  .burstAns{position:absolute; top:44%; transform:translate(-50%,-50%); width:0; height:0; border-radius:999px; background:rgba(245,158,11,.2); box-shadow:0 0 0 0 rgba(245,158,11,.5); pointer-events:none; animation:burst 900ms ease-out forwards}
+  .tick10.glow{animation:glowPulse 1000ms ease-out 1}
+  @keyframes glowPulse{0%{text-shadow:0 0 0 rgba(99,102,241,0)}50%{text-shadow:0 0 10px rgba(99,102,241,.65)}100%{text-shadow:0 0 0 rgba(99,102,241,0)}}
+
+  /* Make Quick Tests look subtle */
+  details > summary{color:#9aa0a6; font-weight:600; font-size:12px; user-select:none}
+  details[open] > summary{color:#9aa0a6}
+
+  @media (max-width:640px){ .problem{font-size:24px} .subhdr{font-size:18px} .eqLive{font-size:18px} .checklist{font-size:15px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>Subtraction Strategies</h1>
+    <div class="sub">Choose how to think: <strong>Count up</strong> from the smaller number or <strong>Count down</strong> from the bigger number.</div>
+
+    <!-- CONTROLS first -->
+    <div class="controls">
+      <button class="btn primary" id="btnRandom">Random problem</button>
+      <div class="row">
+        <label>Set your own:
+          <input id="inpMinuend" type="number" min="0" max="100" value="14" /> −
+          <input id="inpSub" type="number" min="0" max="100" value="6" />
+          <button class="btn" id="btnSet">Set Equation</button>
+        </label>
+      </div>
+      <div class="row mode" role="radiogroup" aria-label="Mode">
+        <label><input type="radio" name="mode" value="up" checked /> Count up</label>
+        <label><input type="radio" name="mode" value="down" /> Count down</label>
+      </div>
+    </div>
+
+    <!-- MAIN EQUATION -->
+    <div class="problem" aria-live="polite">
+      <span id="minuend">14</span>
+      <span>−</span>
+      <span id="subtrahend">6</span>
+      <span>=</span>
+      <span id="answerBox" class="result">?</span>
+    </div>
+
+    <!-- PROGRESS SECTION -->
+    <div class="sep"></div>
+    <div class="subhdr">Progress so far</div>
+    <div class="progressBox">
+      <div id="eqLive" class="eqLive"></div>
+      <div class="checklist" id="checklist"></div>
+      <div class="celeReserve">
+        <div class="cele ten hidden" id="celeTenPinned" style="margin-top:6px;">✅ Made 10! Now count to <strong id="celeTenGoal"></strong></div>
+        <div class="cele ans hidden" id="celeAnsPinned" style="margin-top:4px;">🎉 You reached the answer! Try the next equation.</div>
+      </div>
+    </div>
+
+    <!-- NUMBER LINE -->
+    <div class="numberline" id="numberline">
+      <div class="nl-flags" id="nlFlags"></div>
+      <div class="nl-track"></div>
+      <div class="nl-ticks" id="nlTicks"></div>
+      <div class="nl-cumulative" id="nlCumulative"></div>
+      <div class="nl-highlights" id="nlHighlights"></div>
+      <div class="hopper" id="hopper">🐰</div>
+    </div>
+
+    <!-- STEP BUTTONS (+1 / -1 only) -->
+    <div class="controls" style="margin-top:8px">
+      <button class="btn" data-step="1" id="btnStep1">+1</button>
+      <button class="btn" id="btnReset">Reset</button>
+    </div>
+
+    <div class="tips">Tip: Two teachable moments — <strong>count</strong> to <strong>10</strong> when it’s between your numbers, then <strong>count</strong> to the <strong>answer</strong>. Switch modes to show it both ways.</div>
+
+    <!-- Quick Tests (developer aid) -->
+    <details style="margin-top:12px"><summary>Run Quick Tests</summary>
+      <div id="testOutput" style="font:12px/1.4 monospace; color:#9aa0a6; white-space:pre-wrap; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:8px; padding:8px; margin-top:6px"></div>
+      <button class="btn" id="btnRunTests" type="button">Run</button>
+    </details>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', ()=>{
+  const el=id=>document.getElementById(id);
+  const minuendEl=el('minuend'), subEl=el('subtrahend'), answerEl=el('answerBox');
+  const inpMinuend=el('inpMinuend'), inpSub=el('inpSub');
+  const nlTicks=el('nlTicks'), nlFlags=el('nlFlags'), hopper=el('hopper');
+  const nlHighlights=el('nlHighlights'), nlCumulative=el('nlCumulative');
+  const eqLive=el('eqLive'), checklistEl=el('checklist');
+  const stepBtns=[el('btnStep1')]; // only ±1
+
+  // Mode & milestones
+  let mode='up';
+  let prevDoneToTen=false;
+  let prevDoneAnswer=false;
+
+  document.querySelectorAll('input[name="mode"]').forEach(r=>r.addEventListener('change',()=>{
+    mode=document.querySelector('input[name="mode"]:checked').value;
+    updateStepLabels();
+    setupUI();
+    resetProgress();
+  }));
+
+  // Problem setup
+  function setProblem(a,b){
+    if(b>a)[a,b]=[b,a];
+    minuendEl.textContent=a; subEl.textContent=b; answerEl.textContent='?';
+    inpMinuend.value=a; inpSub.value=b;
+    setupUI();
+    resetProgress();
+  }
+  function randomInt(max){return Math.floor(Math.random()*(max+1));}
+  function makeRandom(){ let a=randomInt(20), b=randomInt(20); if(a===b){a++; if(a>20)a=20;} setProblem(Math.max(a,b),Math.min(a,b)); }
+
+  el('btnSet').addEventListener('click',()=>{ setProblem(parseInt(inpMinuend.value||0,10), parseInt(inpSub.value||0,10)); });
+  el('btnRandom').addEventListener('click',makeRandom);
+
+  function updateStepLabels(){ const sign = (mode==='up')? '+':'−'; stepBtns[0].textContent = sign+'1'; }
+
+  // Helpers
+  function val(node){ return parseInt(node.textContent,10); }
+  function axisStart(){ const a=val(minuendEl), b=val(subEl); return (mode==='up')? b : (a-b); }
+  function axisEnd(){ return val(minuendEl); }
+  function axisSpan(){ const a=val(minuendEl), b=val(subEl); return (mode==='up')? (a-b) : b; }
+  function scaleX(n){
+    const line=el('numberline');
+    const left=8, right=line.clientWidth-8;
+    const start=axisStart(), end=axisEnd();
+    const t=(end-start)||1;
+    return left + ((n-start)/t)*(right-left);
+  }
+  function positionHopper(n){ hopper.style.left = scaleX(n) + 'px'; }
+
+  function setupUI(){
+    nlTicks.innerHTML=''; nlFlags.innerHTML=''; nlHighlights.innerHTML=''; nlCumulative.innerHTML='';
+    prevDoneToTen=false; prevDoneAnswer=false;
+    const start=axisStart(), end=axisEnd();
+    for(let i=start;i<=end;i++){
+      const d=document.createElement('div');
+      const bar=document.createElement('div'); bar.className='tickbar';
+      const label=document.createElement('div'); label.textContent=i; if(i===10){ label.className='tick10'; label.id='tick10Label'; }
+      d.appendChild(bar); d.appendChild(label); nlTicks.appendChild(d);
+    }
+    const a=val(minuendEl), b=val(subEl);
+    const ansVal = (mode==='up') ? a : (a-b);
+    const f=document.createElement('div'); f.className='flag answer'; f.id='answerFlag'; f.style.left=scaleX(ansVal)+'px'; f.textContent='Answer'; nlFlags.appendChild(f);
+  }
+
+  // progress state
+  let prog=0; // magnitude counted so far
+  function resetProgress(){
+    prog=0; nlHighlights.innerHTML=''; nlCumulative.innerHTML='';
+    buildChecklist(); updateAll();
+    if(mode==='up'){ positionHopper(val(subEl)); } else { positionHopper(val(minuendEl)); }
+  }
+
+  function addStep(step){
+    const span = axisSpan(); if(span<=0) return;
+    let nextProg = prog + Math.abs(step); if(nextProg>span) nextProg=span;
+    const inc = nextProg - prog; prog = nextProg;
+    updateAll(); drawHighlight(inc); updateCumulative();
+    if(prog===span) answerEl.textContent = (val(minuendEl) - val(subEl));
+  }
+
+  // Step button interactions + ripple feedback
+  stepBtns.forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      addStep(parseInt(btn.dataset.step,10));
+      // subtle click feedback
+      btn.classList.add('pressed');
+      const rect=btn.getBoundingClientRect();
+      const s=Math.max(rect.width, rect.height);
+      const rip=document.createElement('span');
+      rip.className='ripple'; rip.style.width=s+'px'; rip.style.height=s+'px';
+      rip.style.left=(e.clientX-rect.left - s/2)+'px'; rip.style.top=(e.clientY-rect.top - s/2)+'px';
+      btn.appendChild(rip);
+      setTimeout(()=>{ btn.classList.remove('pressed'); rip.remove(); }, 450);
+    });
+  });
+  el('btnReset').addEventListener('click', resetProgress);
+
+  function tenInRange(){ const start=axisStart(), end=axisEnd(); return (start<10 && end>10); }
+
+  function buildChecklist(){
+    const showTen = tenInRange();
+    if(showTen){
+      checklistEl.innerHTML = `
+        <div class="item" id="step1">
+          <span class="check" id="check1"></span>
+          <span>${mode==='up'?'1) Count up to 10':'1) Count down to 10'}</span>
+        </div>
+        <div class="item" id="step2">
+          <span class="check" id="check2"></span>
+          <span>${mode==='up'?'2) Count up to the answer':'2) Count down to the answer'}</span>
+        </div>`;
+    } else {
+      checklistEl.innerHTML = `
+        <div class="item" id="stepOnly">
+          <span class="check" id="checkOnly"></span>
+          <span>${mode==='up'?'1) Count up to the answer':'1) Count down to the answer'}</span>
+        </div>`;
+    }
+  }
+
+  function updateAll(){
+    const a=val(minuendEl), b=val(subEl); const span=axisSpan();
+    const toTenUp=Math.max(0, Math.min(span, 10-b));
+    const toTenDown=Math.max(0, Math.min(span, a-10));
+    const showTen = tenInRange();
+
+    // Live equation (cumulative)
+    if(mode==='up') eqLive.textContent = `${b} + ${prog} = ${b+prog}`; else eqLive.textContent = `${a} − ${prog} = ${a-prog}`;
+
+    // Checks
+    const doneToTen = showTen ? ((mode==='up') ? (prog >= toTenUp) : (prog >= toTenDown)) : false;
+    const doneToAnswer = (prog >= span);
+
+    // Update checklist checkboxes
+    if(showTen){
+      const c1=el('check1'), c2=el('check2'); if(c1){ c1.classList.toggle('done', doneToTen); c1.textContent = doneToTen? '✓' : ''; }
+      if(c2){ c2.classList.toggle('done', doneToAnswer); c2.textContent = doneToAnswer? '✓' : ''; }
+    } else {
+      const cOnly=el('checkOnly'); if(cOnly){ cOnly.classList.toggle('done', doneToAnswer); cOnly.textContent = doneToAnswer? '✓' : ''; }
+    }
+
+    // Ten celebration: persistent chip next to Step 1 text
+    const tenChip=el('celeTenPinned');
+    if(showTen && doneToTen){
+      const goalNum = (mode==='up') ? a : (a - b);
+      el('celeTenGoal').textContent = goalNum;
+      tenChip.classList.remove('hidden');
+      if(!prevDoneToTen) celebrateTenOnce();
+    } else {
+      tenChip.classList.add('hidden');
+    }
+
+    // Answer celebration: persistent chip next to Step 2/Only
+    const celeAns=el('celeAnsPinned');
+    if(doneToAnswer){
+      celeAns.classList.remove('hidden');
+      if(!prevDoneAnswer) celebrateAnswer();
+    } else {
+      celeAns.classList.add('hidden');
+    }
+
+    prevDoneToTen = doneToTen;
+    prevDoneAnswer = doneToAnswer;
+
+    // Bunny position & cumulative
+    const curVal=(mode==='up')?(axisStart()+prog):(axisEnd()-prog); positionHopper(curVal);
+    updateCumulative();
+  }
+
+  // ===== Highlight bars per jump, colored by purpose =====
+  function drawHighlight(inc){
+    if(inc<=0) return;
+    const a=val(minuendEl), b=val(subEl), ans=a-b;
+    const startVal=(mode==='up')? (b+prog-inc) : (a-prog+inc);
+    const endVal=(mode==='up')? (b+prog) : (a-prog);
+
+    const domainStart=(mode==='up')? b : ans;
+    const domainEnd=a;
+    const domainHasTen=(domainStart<10 && domainEnd>10);
+
+    const crossTen = domainHasTen ? ((mode==='up') ? (startVal<10 && endVal>10) : (startVal>10 && endVal<10)) : false;
+
+    if(crossTen){
+      drawSegment(startVal,10,'ten');
+      drawSegment(10,endVal,'answer');
+    } else {
+      const kindCandidate=(mode==='up') ? (endVal<=10? 'ten':'answer') : (endVal>=10? 'ten':'answer');
+      const kind = domainHasTen ? kindCandidate : 'answer';
+      drawSegment(startVal,endVal, kind);
+    }
+  }
+
+  function drawSegment(from,to,kind){
+    const left=scaleX(Math.min(from,to));
+    const right=scaleX(Math.max(from,to));
+    const bar=document.createElement('div');
+    bar.className='highlightBar '+(kind==='ten'?'ten':'answer');
+    bar.style.left=left+'px';
+    bar.style.width=Math.max(2,(right-left))+'px';
+    bar.dataset.start=String(from);
+    bar.dataset.end=String(to);
+    const amount=Math.abs(to-from);
+    bar.textContent=(mode==='up'?'+':'−')+amount;
+    nlHighlights.appendChild(bar);
+  }
+
+  // ===== Cumulative bar above highlights =====
+  function updateCumulative(){
+    const s=axisStart(), e=axisEnd();
+    const current=(mode==='up')? (s+prog) : (e-prog);
+    nlCumulative.innerHTML='';
+    if(prog===0) return; // avoid showing −0 / +0
+
+    if(mode==='up'){
+      const left=scaleX(Math.min(s,current));
+      const right=scaleX(Math.max(s,current));
+      const bar=document.createElement('div');
+      bar.className='cumulativeBar';
+      bar.style.left=left+'px';
+      bar.style.width=Math.max(2,(right-left))+'px';
+      bar.textContent='+'+prog;
+      nlCumulative.appendChild(bar);
+    } else {
+      const left=scaleX(current); // grow from right (e) toward left
+      const right=scaleX(e);
+      const bar=document.createElement('div');
+      bar.className='cumulativeBar';
+      bar.style.left=left+'px';
+      bar.style.width=Math.max(2,(right-left))+'px';
+      bar.textContent='−'+prog;
+      nlCumulative.appendChild(bar);
+    }
+  }
+
+  // Milestone celebrations (visual bursts)
+  function celebrateTenOnce(){
+    if(prevDoneToTen) return; // only first time
+    const tick10=document.getElementById('tick10Label');
+    if(tick10){ tick10.classList.add('glow'); setTimeout(()=>tick10.classList.remove('glow'),1100); }
+    const start=axisStart(), end=axisEnd(); if(!(start<10 && end>10)) return;
+    const x=scaleX(10); const burst=document.createElement('div'); burst.className='burst'; burst.style.left=x+'px';
+    document.getElementById('numberline').appendChild(burst); setTimeout(()=>burst.remove(),950);
+  }
+  function celebrateAnswer(){
+    const a=val(minuendEl), b=val(subEl);
+    const ansVal = (mode==='up') ? a : (a - b);
+    const x=scaleX(ansVal);
+    const burst=document.createElement('div'); burst.className='burstAns'; burst.style.left=x+'px'; document.getElementById('numberline').appendChild(burst); setTimeout(()=>burst.remove(),950);
+  }
+
+  // Reflow bars on resize
+  function reflowHighlights(){
+    [...nlHighlights.children].forEach(bar=>{
+      const from=parseFloat(bar.dataset.start), to=parseFloat(bar.dataset.end);
+      const left=scaleX(Math.min(from,to)), right=scaleX(Math.max(from,to));
+      bar.style.left=left+'px'; bar.style.width=(right-left)+'px';
+    });
+    updateCumulative();
+  }
+  new ResizeObserver(()=>{ updateAll(); reflowHighlights(); }).observe(el('numberline'));
+
+  // Quick tests (basic sanity checks)
+  function runQuickTests(){
+    const out=[];
+    const save={a:val(minuendEl), b:val(subEl), m:mode, p:prog};
+
+    // T1: Count down domain & answer flag for 12-1
+    setProblem(12,1); mode='down'; updateStepLabels(); setupUI(); resetProgress();
+    const ans1=12-1; out.push(`T1 domain [${axisStart()}..${axisEnd()}] (expect [${ans1}..12])`);
+    const flagLeft1 = el('answerFlag').style.left; const shouldLeft1 = scaleX(ans1)+'px'; out.push(`T1 flag correct: ${flagLeft1===shouldLeft1}`);
+
+    // T2: Down cumulative empty on reset, then −1 after a step
+    resetProgress();
+    out.push(`T2 empty on reset: ${el('nlCumulative').innerHTML.trim().length===0}`);
+    addStep(1);
+    const cumBar = el('nlCumulative').firstElementChild; out.push(`T2 after −1 label: ${cumBar && cumBar.textContent.trim()==='−1'}`);
+
+    // T3: Count up domain for 14-6
+    setProblem(14,6); mode='up'; updateStepLabels(); setupUI(); resetProgress();
+    out.push(`T3 domain [${axisStart()}..${axisEnd()}] (expect [6..14])`);
+
+    // T4: tenInRange false for 20-18
+    setProblem(20,18); mode='up'; updateStepLabels(); setupUI(); resetProgress();
+    out.push(`T4 tenInRange=${tenInRange()} (expect false)`);
+
+    // T5: Answer celebration triggers in Count down (e.g., 14-6)
+    setProblem(14,6); mode='down'; updateStepLabels(); setupUI(); resetProgress();
+    addStep(6); // reach the answer span
+    const ansChip = document.getElementById('celeAnsPinned');
+    const ansChipShown = getComputedStyle(ansChip).visibility === 'visible';
+    out.push(`T5 answer celebration visible (down): ${ansChipShown}`);
+
+    // T6: Progress panel reserves height for celebrations (no layout shift)
+    setProblem(14,6); mode='up'; updateStepLabels(); setupUI(); resetProgress();
+    const reserve = document.querySelector('.celeReserve');
+    const h0 = reserve ? reserve.clientHeight : 0;
+    for(let i=0;i<4;i++) addStep(1); // to 10
+    const h1 = reserve ? reserve.clientHeight : 0;
+    for(let i=0;i<4;i++) addStep(1); // to answer
+    const h2 = reserve ? reserve.clientHeight : 0;
+    out.push(`T6 reserve height stays constant: ${h0===h1 && h1===h2} (h=${h0})`);
+
+    // Restore
+    setProblem(save.a, save.b); mode=save.m; updateStepLabels(); setupUI(); prog=save.p; updateAll();
+
+    el('testOutput').textContent = out.join('\n');
+  }
+  const btnRun=el('btnRunTests'); if(btnRun){ btnRun.addEventListener('click', runQuickTests); }
+
+  // Init
+  updateStepLabels();
+  setProblem(14,6);
+});
+</script>
+</body>
+</html>

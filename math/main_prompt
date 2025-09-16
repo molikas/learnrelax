@@ -1,0 +1,56 @@
+
+After reading these instructions aknowldge that you understand the task and ready to work. Don't generate any code until asked for.
+# interaction with the developers
+1. The game developer who is either building a new game or is asking you to continue updating the previous version
+2. In case it is a new game you will be asked to build out the initial shell using the instructions provided below, you might optionally get a screen mockup of the game. You should try to build it in the game section.
+3. In case of continueing developement, either a HTML or Typescript will be provided and you need to take this source code as-is with 0 changes and run it in Preview mode. IT is absolutley critical that you do not change anything in the provided code just do a 1 to 1 copy of the provided code and run it.
+
+# context
+1. we are helping parents to teach their childeren math ages 6 to 10
+2. children are anxious and are having a hard time listening to parents explaining math concepts and principals.
+3. these games help parents visually show the things they are trying to explain, this is an alternative to using sheets of paper and/or physical props like coins.
+4. parents are expected to show how to solve the problem on screen and then let kids repeat the same
+5. given that the kids are anxious we want to remove the pressure of both time and scores. 
+6. we also want to encourage kids to improve and continue pushing on to help build their confidence, analytical skills and being afraid of hard work and hard problems.
+7. we also want to encorporate research based teaching practices, whenver approriate.
+CRA progression (Concrete → Representational → Abstract): start with objects, then pictures, then equations.
+Multiple representations: blocks, number lines, arrays, fingers, visuals.
+Bridge-to-10 strategy: show flexible ways to make 10 for mental math fluency.
+Commutativity insight: let kids flip a + b → b + a to see equivalence.
+Explain thinking, not speed: quick prompts for “how did you know?” to build metacognition.
+Self-explanation: short “why does this work?” moments to deepen understanding.
+Errorless scaffolds: guide kids gently toward correct answers to prevent frustration.
+Productive struggle (with support): allow small challenges that build persistence.
+Spaced repetition: repeat problem families across days to cement memory.
+Interleaving: mix problem types so kids choose strategies flexibly.
+Focused sets: target specific pairs or fact families for mastery.
+Mini-stories and narrative: wrap math in simple, memorable stories.
+Visual patterning: use symmetry, dot patterns, or grouping to highlight structure.
+Feedback loops: instant but calm feedback; hints instead of harsh corrections.
+Gentle language & colors: supportive tone, calm visuals, avoid pressure.
+Gamified mastery paths: badges, levels, or fun progress markers without heavy competition.
+Choice and agency: let kids choose problems, characters, or modes.
+Embodied interaction: dragging, jumping, clapping rhythms — connect body and mind.
+Social sharing / teaching others: encourage kids to explain or “teach” solutions.
+
+# Game Design principles
+1. There should not be too manu controls 
+
+# code 
+1. Limit technologies to HTML, CSS, JS
+2. Ensure compatibility with multiple platrfoms and browsers. This code will be embedded into google sites and will be availble for multiple browsers and devices PC, MAC, Windows, Android, etc.
+3. Each section needs to have a dedicated name to make it easier to work with modular blocks.
+4. Standard blocks will always include: TITLE, INSTRUCTIONS, EQUATION_CELEBRATION, DOTS,
+TITLE - contains the title of the games
+INSTRUCTIONS - is a colapsible panel, closed by default. Contains game instructions written on in 2 grader level. Instructions include sections: How to play. Why we do it. Tips
+EQUATION_CELEBRATION - contains the generated problem. After the equation is solved the original equation is replaced with a Celebration informing the player that they solved the problem, and reinforcing what they have learned. i.e. in the near doubles game  you would have : 🎉 Nice! 7 + 8 = 15 You built it with 7 + 7 + 1.
+INPUT - contains 2 controls "Edit Equation"
+DOTS - visual representation of the math happening in the game.
+GAME_AREA - this is where the actual game mechanics happens.
+FOOTER -  holds general information.
+5. All code generations should be versioned. So that it is possible to revert back to a specific itteration.
+6. in the begining of the code file we want to have a changelog so that it is clear what changes were made and you can trace back all the changes.
+7. add a sanity tests in __nbGame.tests.all()
+8. when applying code changes make sure you do not loose any of the changes and improvements made up to that point.
+
+

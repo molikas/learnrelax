@@ -1,0 +1,467 @@
+<!--
+Number Breakdown Animal Feeding Game — v1.12.0 (2025-09-11)
+Changelog
+- v1.12.0: Restored all prior improvements + larger +/- buttons (high-visibility) and kept random-range selector after Random.
+  • Prominent two-row Equation/Celebration; live equation updates; soft green background on solve.
+  • Order-sensitive variation logging with ⭐; entries show full equations like "2 + 2 + 1 = 5".
+  • Named animals: Dog, Cat, Mouse (no numbering). Extra animals use Bunny, Fox, Panda, etc.
+  • Drag & drop, click-to-return, and +/- controls; returned treats glow in pool.
+  • White background; 🍣 treats; header/input synced on Set/Random.
+  • Random range selector (2–10 default, or 2–20) appears after the Random button.
+- v1.10.x: Random UX, selector position.
+- v1.9.x: Expanded number range to 2–20.
+- v1.7.x+: Variations, names, visuals, tests.
+
+Sections per spec: TITLE, INSTRUCTIONS, EQUATION_CELEBRATION, INPUT, DOTS, GAME_AREA, FOOTER
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Animal Feeding — Number Breakdown (v1.12.0)</title>
+  <style>
+    :root{
+      --bg:#ffffff; --card:#ffffff; --ink:#1f2937; --muted:#64748b; --good:#16a34a; --accent:#2563eb;
+      --soft:#e2e8f0; --ring:#93c5fd; --poolglow:#eef6ff; --cele-bg:#ecfdf5; --cele-border:#bbf7d0; --danger:#dc2626;
+      --plus-bg:#dcfce7; --plus-border:#86efac; --minus-bg:#fee2e2; --minus-border:#fecaca;
+    }
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
+    .container{max-width:960px;margin:0 auto;padding:16px 16px 32px;}
+
+    /* TITLE */
+    #TITLE{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0 12px;}
+    #TITLE h1{font-size:clamp(20px,3.5vw,28px);margin:0;}
+    .version{font-size:12px;color:var(--muted)}
+
+    /* INSTRUCTIONS */
+    #INSTRUCTIONS{background:var(--card);border:1px solid var(--soft);border-radius:12px;overflow:hidden;margin:8px 0 16px;}
+    #INSTRUCTIONS summary{cursor:pointer;list-style:none;padding:14px 16px;font-weight:700;display:flex;align-items:center;gap:8px}
+    #INSTRUCTIONS summary::-webkit-details-marker{display:none}
+    #INSTRUCTIONS .caret{display:inline-block;transition:transform .2s ease}
+    #INSTRUCTIONS[open] .caret{transform:rotate(180deg)}
+    #INSTRUCTIONS .body{padding:0 16px 16px 16px;color:var(--ink);} 
+    #INSTRUCTIONS h4{margin:12px 0 6px 0}
+    #INSTRUCTIONS p, #INSTRUCTIONS li{line-height:1.5}
+
+    /* EQUATION_CELEBRATION */
+    #EQUATION_CELEBRATION{background:var(--card);border:2px solid var(--soft);border-radius:14px;padding:16px;margin:0 0 14px;display:flex;flex-direction:column;gap:10px}
+    #EQUATION_CELEBRATION .problemTitle{font-weight:800;font-size:clamp(18px,3.8vw,28px)}
+    #EQUATION_CELEBRATION .celeLine{font-weight:800;font-size:clamp(18px,3.6vw,26px);color:var(--good)}
+    #EQUATION_CELEBRATION.solved{background:var(--cele-bg);border-color:var(--cele-border)}
+    #variationsWrap{border-top:1px dashed var(--soft);padding-top:8px}
+    #variationsTitle{font-weight:700;font-size:14px;color:var(--muted)}
+    #variationsList{margin:6px 0 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:8px}
+    .variationTag{border:1px solid var(--soft);border-radius:999px;padding:6px 10px;background:#f8fafc;font-weight:700}
+
+    /* INPUT */
+    #INPUT{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 12px}
+    .btn{appearance:none;border:1px solid var(--soft);background:var(--card);padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:700}
+    .btn:focus{outline:3px solid var(--ring)}
+    .btn.primary{border-color:#bfdbfe;background:#eff6ff}
+    .num-input{width:92px;padding:10px 10px;border:1px solid var(--soft);border-radius:10px;font-weight:700}
+    .num-input:focus{outline:3px solid var(--ring)}
+    .select{padding:10px;border:1px solid var(--soft);border-radius:10px;font-weight:700;background:#fff}
+    .err{color:var(--danger);font-size:12px}
+
+    /* DOTS (Treats row / pool) */
+    #DOTS{background:var(--card);border:1px solid var(--soft);border-radius:12px;padding:10px 12px;margin:0 0 12px;transition:background-color .25s ease}
+    #DOTS.flash{background:var(--poolglow)}
+    #treatRow{display:flex;flex-wrap:wrap;gap:6px;min-height:38px}
+    .treat{font-size:28px;line-height:1;border:1px dashed transparent;border-radius:8px;padding:2px;user-select:none}
+    .treat.unassigned{border-color:var(--soft);cursor:grab}
+    .treat.dragging{opacity:.6}
+    .treat.recent{box-shadow:0 0 0 3px var(--ring);animation:pulse 1.5s ease-in-out 1}
+    @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.1)}100%{transform:scale(1)}}
+
+    /* GAME_AREA */
+    #GAME_AREA{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    .animal{background:var(--card);border:1px solid var(--soft);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:8px}
+    .animalHeader{display:flex;align-items:center;gap:10px;justify-content:space-between}
+    .leftHead{display:flex;align-items:center;gap:10px}
+    .avatar{font-size:32px}
+    .countBadge{font-size:28px;font-weight:800;min-width:36px;text-align:center;color:var(--accent)}
+    .controls{display:flex;gap:8px}
+    .pile{display:flex;flex-wrap:wrap;min-height:34px;gap:6px;padding:6px;border:1px dashed var(--soft);border-radius:10px}
+    .pile.dropReady{background:#f0f9ff}
+    .hint{color:var(--muted);font-size:12px}
+
+    /* Larger, color-cued mini buttons */
+    .mini{border:2px solid var(--soft);padding:10px 14px;border-radius:12px;font-weight:900;font-size:22px;cursor:pointer;line-height:1;background:#f8fafc}
+    .mini.plus{background:var(--plus-bg);border-color:var(--plus-border)}
+    .mini.minus{background:var(--minus-bg);border-color:var(--minus-border)}
+
+    /* FOOTER */
+    #FOOTER{margin-top:16px;color:var(--muted);font-size:12px;text-align:center}
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- TITLE -->
+    <section id="TITLE" aria-label="Title">
+      <h1>Animal Feeding — Number Breakdown</h1>
+      <span class="version">v1.12.0</span>
+    </section>
+
+    <!-- INSTRUCTIONS (collapsible) -->
+    <details id="INSTRUCTIONS">
+      <summary><span class="caret">▼</span> Instructions</summary>
+      <div class="body">
+        <h4>How to play</h4>
+        <ul>
+          <li>Drag and drop a 🍣 from the pool to an animal — or use the <strong>+ / −</strong> buttons.</li>
+          <li>To take a treat back, drag it to the pool, click a 🍣 in a pile, or press <strong>−</strong>. Returned treats glow.</li>
+          <li>Watch the equation fill in as you feed. When all treats are given, the card turns green.</li>
+        </ul>
+        <h4>Why we do it</h4>
+        <p>Breaking a number into parts helps your brain see how numbers fit together. This builds strong addition skills.</p>
+        <h4>Tips</h4>
+        <ul>
+          <li>No timer. Go slowly and try more than one way.</li>
+          <li>If drag and drop is tricky, use the <strong>+ / −</strong> buttons.</li>
+        </ul>
+      </div>
+    </details>
+
+    <!-- EQUATION_CELEBRATION -->
+    <section id="EQUATION_CELEBRATION" aria-live="polite">
+      <div id="equationText" class="problemTitle">We have <span id="targetNumber">5</span> treats to share.</div>
+      <div id="celebration" class="celeLine" role="status">_ + _ + _ = ?</div>
+      <div id="variationsWrap">
+        <div id="variationsTitle">Your found ways (⭐ = new):</div>
+        <ul id="variationsList"></ul>
+      </div>
+    </section>
+
+    <!-- INPUT: number field, Set, Random, Range selector (after Random) -->
+    <section id="INPUT" aria-label="Controls">
+      <input id="numberInput" class="num-input" type="number" min="2" max="20" step="1" value="5" aria-label="Target number" />
+      <button class="btn" id="setNumberBtn" title="Set the target number">✏️ Set number</button>
+      <button class="btn primary" id="randomBtn" title="Pick a number in the selected range">🎲 Random number</button>
+      <select id="randomRange" class="select" title="Random number range">
+        <option value="2-10" selected>2–10</option>
+        <option value="2-20">2–20</option>
+      </select>
+      <span id="inputError" class="err" role="status" aria-live="polite" style="display:none"></span>
+    </section>
+
+    <!-- DOTS: Treats row (unassigned pool) -->
+    <section id="DOTS" aria-label="Treats">
+      <div id="treatRow" aria-describedby="treatHint"></div>
+      <div id="treatHint" class="hint">Drag a 🍣 to an animal, or use + / − . Returned treats glow for a moment—drag to give again.</div>
+    </section>
+
+    <!-- GAME_AREA: animals and their piles -->
+    <section id="GAME_AREA" aria-label="Animals"></section>
+
+    <!-- FOOTER -->
+    <footer id="FOOTER">Calm practice. No timers. Explore different ways to make a number.</footer>
+  </div>
+
+  <script>
+    (function(){
+      // --- Config ---
+      const DEFAULT_TARGET = 5;
+      const DEFAULT_ANIMALS = 3; // at least 2 enforced
+
+      // --- State ---
+      let state = {
+        target: DEFAULT_TARGET,
+        animals: [], // {id, kind, name, avatar, pile}
+        treats: [],  // {id, assignedTo: null|animalId}
+        lastReturnedId: null,
+        poolFlashUntil: 0,
+        foundVariations: new Set(), // order-sensitive keys
+        foundList: [] // display strings
+      };
+
+      // --- DOM ---
+      const targetNumberEl = document.getElementById('targetNumber');
+      const equationTextEl = document.getElementById('equationText');
+      const celebrationEl = document.getElementById('celebration');
+      const ECARD = document.getElementById('EQUATION_CELEBRATION');
+      const DOTS = document.getElementById('DOTS');
+      const treatRowEl = document.getElementById('treatRow');
+      const gameAreaEl = document.getElementById('GAME_AREA');
+      const numberInput = document.getElementById('numberInput');
+      const setNumberBtn = document.getElementById('setNumberBtn');
+      const randomBtn = document.getElementById('randomBtn');
+      const randomRange = document.getElementById('randomRange');
+      const inputError = document.getElementById('inputError');
+      const variationsList = document.getElementById('variationsList');
+
+      // --- Helpers ---
+      function randInt(min, max){ return Math.floor(Math.random()*(max-min+1))+min; }
+      function uid(){ return Math.random().toString(36).slice(2,9); }
+
+      const LINEUP = [
+        { kind:'dog',   name:'Dog',   avatar:'🐶' },
+        { kind:'cat',   name:'Cat',   avatar:'🐱' },
+        { kind:'mouse', name:'Mouse', avatar:'🐭' },
+        { kind:'bunny', name:'Bunny', avatar:'🐰' },
+        { kind:'fox',   name:'Fox',   avatar:'🦊' },
+        { kind:'panda', name:'Panda', avatar:'🐼' }
+      ];
+
+      function sumPiles(){ return state.animals.reduce((s,a)=>s+a.pile,0); }
+      function pilesArray(){ return state.animals.map(a=>a.pile); }
+      function orderedKey(){ return pilesArray().join(','); }
+      function eqStringFull(){ return pilesArray().join(' + ') + ' = ' + state.target; }
+
+      function renderEquationLine(){
+        const piles = pilesArray();
+        const total = sumPiles();
+        const anyGiven = total>0;
+        const left = piles.map((n)=> total===0 ? '_' : String(n)).join(' + ');
+        const right = anyGiven ? String(total) : '?';
+        celebrationEl.textContent = `${left} = ${right}`;
+      }
+
+      function showError(msg){ inputError.textContent = msg; inputError.style.display = msg ? 'inline' : 'none'; }
+
+      function renderAll(){
+        renderPool();
+        renderAnimals();
+        renderVariations();
+      }
+
+      // --- Init ---
+      function initRound(target=DEFAULT_TARGET, animalCount=DEFAULT_ANIMALS){
+        if(target < 2) target = 2;
+        animalCount = Math.max(2, Math.min(animalCount, target));
+
+        state.target = target;
+        state.animals = [];
+        state.treats = [];
+        state.lastReturnedId = null;
+        state.poolFlashUntil = 0;
+        state.foundVariations = new Set();
+        state.foundList = [];
+
+        for(let i=0;i<animalCount;i++){
+          const spec = LINEUP[i % LINEUP.length];
+          state.animals.push({ id: uid(), kind: spec.kind, name: spec.name, avatar: spec.avatar, pile: 0 });
+        }
+        for(let i=0;i<target;i++) state.treats.push({ id: uid(), assignedTo: null });
+
+        ECARD.classList.remove('solved');
+        setEquationHeader();
+        numberInput.value = String(target);
+        renderAll();
+        renderEquationLine();
+      }
+
+      function setEquationHeader(){
+        targetNumberEl.textContent = String(state.target);
+        equationTextEl.style.display = 'block';
+      }
+
+      function updateAfterChange(){
+        state.animals.forEach(a=>{ a.pile = state.treats.filter(t=>t.assignedTo===a.id).length; });
+        renderAll();
+        renderEquationLine();
+        checkComplete();
+      }
+
+      function showSolved(){ ECARD.classList.add('solved'); }
+      function hideSolved(){ ECARD.classList.remove('solved'); }
+
+      function renderVariations(){
+        variationsList.innerHTML = '';
+        if(state.foundList.length === 0){ return; }
+        for(const s of state.foundList){
+          const li = document.createElement('li');
+          li.className = 'variationTag';
+          li.textContent = `⭐ ${s}`;
+          variationsList.appendChild(li);
+        }
+      }
+
+      function maybeLogVariation(){
+        const total = sumPiles();
+        if(total !== state.target) return; // only log when complete
+        const key = orderedKey();
+        if(!state.foundVariations.has(key)){
+          state.foundVariations.add(key);
+          state.foundList.push(eqStringFull());
+          renderVariations();
+        }
+      }
+
+      function checkComplete(){
+        const total = sumPiles();
+        if(total === state.target){
+          showSolved();
+          maybeLogVariation();
+        } else {
+          hideSolved();
+        }
+      }
+
+      // --- Pool (unassigned) ---
+      function renderPool(){
+        DOTS.classList.toggle('flash', Date.now() < state.poolFlashUntil);
+        treatRowEl.innerHTML = '';
+        const un = state.treats.filter(t=>!t.assignedTo);
+        un.forEach(t => {
+          const span = document.createElement('span');
+          span.className = 'treat unassigned' + (t.id===state.lastReturnedId ? ' recent' : '');
+          span.textContent = '🍣';
+          span.title = t.id===state.lastReturnedId ? 'Returned — drag to give again' : 'Drag to give to an animal';
+          span.draggable = true;
+          span.dataset.treatId = t.id;
+          span.addEventListener('dragstart', onTreatDragStart);
+          span.addEventListener('dragend', onTreatDragEnd);
+          treatRowEl.appendChild(span);
+        });
+        treatRowEl.ondragover = (e)=> e.preventDefault();
+        treatRowEl.ondrop = (e)=>{
+          const id = e.dataTransfer.getData('text/treat');
+          if(!id) return;
+          returnTreatToPool(id);
+        };
+      }
+
+      // --- Animals ---
+      function renderAnimals(){
+        gameAreaEl.innerHTML = '';
+        state.animals.forEach(a => {
+          const card = document.createElement('div');
+          card.className = 'animal';
+
+          const header = document.createElement('div');
+          header.className = 'animalHeader';
+          const left = document.createElement('div');
+          left.className = 'leftHead';
+          left.innerHTML = `<span class="avatar" aria-hidden="true">${a.avatar}</span> <strong>${a.name}</strong>`;
+          const count = document.createElement('div');
+          count.className = 'countBadge';
+          count.textContent = a.pile;
+          header.appendChild(left);
+          header.appendChild(count);
+
+          const controls = document.createElement('div');
+          controls.className = 'controls';
+          const plus = document.createElement('button'); plus.className='mini plus'; plus.textContent='+'; plus.title='Give one treat';
+          plus.onclick = ()=>{
+            const pool = state.treats.find(t=>!t.assignedTo);
+            if(!pool) return;
+            pool.assignedTo = a.id; a.pile += 1; updateAfterChange();
+          };
+          const minus = document.createElement('button'); minus.className='mini minus'; minus.textContent='−'; minus.title='Take one back';
+          minus.onclick = ()=>{
+            const t = findAssignedTreat(a.id);
+            if(!t) return;
+            returnTreatToPool(t.id);
+          };
+          controls.appendChild(plus); controls.appendChild(minus);
+          header.appendChild(controls);
+
+          const pile = document.createElement('div');
+          pile.className = 'pile';
+          pile.ondragover = (e)=>{ e.preventDefault(); pile.classList.add('dropReady'); };
+          pile.ondragleave = ()=> pile.classList.remove('dropReady');
+          pile.ondrop = (e)=>{
+            pile.classList.remove('dropReady');
+            const id = e.dataTransfer.getData('text/treat');
+            if(!id) return;
+            const tr = state.treats.find(x=>x.id===id);
+            if(!tr) return;
+            if(tr.assignedTo && tr.assignedTo!==a.id){
+              const old = state.animals.find(x=>x.id===tr.assignedTo);
+              if(old) old.pile = Math.max(0, old.pile-1);
+            }
+            tr.assignedTo = a.id;
+            a.pile += 1;
+            state.lastReturnedId = null;
+            updateAfterChange();
+          };
+
+          for(let i=0;i<a.pile;i++){
+            const span = document.createElement('span');
+            span.className = 'treat';
+            span.textContent = '🍣';
+            span.draggable = true;
+            span.onclick = ()=>{
+              const t = findAssignedTreat(a.id);
+              if(!t) return; returnTreatToPool(t.id);
+            };
+            span.ondragstart = (e)=>{
+              const t = findAssignedTreat(a.id);
+              if(!t) return; e.dataTransfer.setData('text/treat', t.id); span.classList.add('dragging');
+            };
+            span.ondragend = ()=> span.classList.remove('dragging');
+            pile.appendChild(span);
+          }
+
+          const hint = document.createElement('div');
+          hint.className = 'hint';
+          hint.textContent = a.pile===0 ? 'Drop treats here or press +': `${a.pile} treat${a.pile===1?'':'s'}`;
+
+          card.appendChild(header);
+          card.appendChild(pile);
+          card.appendChild(hint);
+          gameAreaEl.appendChild(card);
+        });
+      }
+
+      // --- Actions ---
+      function onTreatDragStart(e){ e.dataTransfer.setData('text/treat', e.target.dataset.treatId); e.target.classList.add('dragging'); }
+      function onTreatDragEnd(e){ e.target.classList.remove('dragging'); }
+
+      function findAssignedTreat(animalId){
+        return state.treats.slice().reverse().find(x=>x.assignedTo===animalId) || null;
+      }
+
+      function returnTreatToPool(treatId){
+        const tr = state.treats.find(x=>x.id===treatId);
+        if(!tr) return;
+        const old = state.animals.find(x=>x.id===tr.assignedTo);
+        if(old){ old.pile = Math.max(0, old.pile-1); }
+        tr.assignedTo = null;
+        state.lastReturnedId = tr.id;
+        state.poolFlashUntil = Date.now() + 1500;
+        updateAfterChange();
+        setTimeout(()=>{ if(state.lastReturnedId===tr.id) { state.lastReturnedId = null; renderPool(); } }, 1600);
+      }
+
+      // --- INPUT control wiring ---
+      setNumberBtn.onclick = ()=>{
+        const n = parseInt(numberInput.value, 10);
+        if(Number.isNaN(n) || n < 2 || n > 20){
+          showError('Please enter a whole number between 2 and 20.');
+          return;
+        }
+        showError('');
+        initRound(n, Math.max(2, Math.min(state.animals.length || 3, n)));
+      };
+
+      numberInput.onkeydown = (e)=>{ if(e.key === 'Enter') setNumberBtn.click(); };
+
+      randomBtn.onclick = ()=>{
+        showError('');
+        const [min,max] = (document.getElementById('randomRange')?.value || '2-10').split('-').map(Number);
+        const target = randInt(min,max);
+        const animals = randInt(2,3); // calm variety
+        initRound(target, animals);
+      };
+
+      // --- Tiny test harness (manual) ---
+      window.__nbGame = {
+        state,
+        api: { initRound, sumPiles, orderedKey, eqStringFull },
+        tests: {
+          header_updates(){ initRound(6,3); return document.getElementById('targetNumber').textContent.trim()==='6' && document.getElementById('numberInput').value==='6'; },
+          order_sensitive_variations(){ initRound(3,3); let t=state.treats.find(x=>!x.assignedTo); t.assignedTo=state.animals[0].id; t=state.treats.find(x=>!x.assignedTo); t.assignedTo=state.animals[0].id; t=state.treats.find(x=>!x.assignedTo); t.assignedTo=state.animals[1].id; updateAfterChange(); const k1=orderedKey(); const s1=state.foundList[0]; initRound(3,3); t=state.treats.find(x=>!x.assignedTo); t.assignedTo=state.animals[0].id; t=state.treats.find(x=>!x.assignedTo); t.assignedTo=state.animals[1].id; t=state.treats.find(x=>!x.assignedTo); t.assignedTo=state.animals[1].id; updateAfterChange(); const k2=orderedKey(); const s2=state.foundList[0]; return (k1!==k2)&&(s1!==s2); },
+          range_selector_after_random(){ const inputSec = document.getElementById('INPUT'); const idxRandom=[...inputSec.children].findIndex(n=>n.id==='randomBtn'); const idxRange=[...inputSec.children].findIndex(n=>n.id==='randomRange'); return idxRange>idxRandom; },
+          all(){ const a=this.header_updates(); const b=this.order_sensitive_variations(); const c=this.range_selector_after_random(); console.table([{header:a,order:b,rangePos:c}]); return a&&b&&c; }
+        }
+      };
+
+      // --- Start ---
+      initRound(DEFAULT_TARGET, DEFAULT_ANIMALS);
+    })();
+  </script>
+</body>
+</html>

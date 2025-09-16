@@ -1,0 +1,262 @@
+# Subtraction Strategies Game — Product Specification (Current Build)
+
+> **Scope:** This spec describes the *current shipping* single‑file HTML/CSS/JS build titled **“Subtraction Strategies Game — +1 Only (Google Sites)”**. It replaces earlier drafts where ±5 was available and where celebration chips caused layout shift.
+
+---
+
+## 1) Summary & Intent
+
+An embeddable, zero‑dependency game that teaches Grade‑2 subtraction using two mental models:
+
+* **Count up** (addition view of subtraction)
+* **Count down** (subtraction view)
+
+Children advance a **bunny** along a **number line** using **±1** steps. The UI colors jumps and shows an accumulating bar so they see how small hops add up. Two teachable milestones are reinforced:
+
+1. **Count to 10** (only when 10 lies between the domain endpoints)
+2. **Count to the answer**
+
+The game is designed for Google Sites embed, classroom demo, or at‑home practice.
+
+**Target audience:** Grade‑2 learners (7–8 years old), teachers, and parents.
+
+---
+
+## 2) User Experience Overview
+
+### 2.1 Layout (top → bottom)
+
+1. **Title & subtitle**
+
+   * Title: *Subtraction Strategies*
+   * Subtitle: “Choose how to think: Count up or Count down.”
+
+2. **Controls (top block)**
+
+   * **Random problem** button (generates `a` and `b`, 0–20, ensures `a ≥ b`, avoids `a = b`).
+   * **Set Equation**: two numeric inputs `[a] − [b]` and “Set Equation” button.
+   * **Mode switch**: radio pair → **Count up / Count down**.
+
+3. **Main equation** (large, bold): `a − b = ?` → becomes the numeric answer when solved.
+
+4. **Progress section** (prominent card)
+
+   * **Live equation** (monospace):
+
+     * Count up: `b + k = b+k`
+     * Count down: `a − k = a−k`
+   * **Checklist** (two lines, stacked):
+
+     * Step 1: `Count up/down to 10` *(only shows if 10 is between domain endpoints)*
+     * Step 2: `Count up/down to the answer`
+   * **Celebration chips** *(persistent)*:
+
+     * ✅ Made 10! Now count to **\[goal]**
+     * 🎉 You reached the answer! Try the next equation.
+   * **Reserved space:** chips do **not** cause layout shift; panel height is constant.
+
+5. **Number line**
+
+   * Inclusive integer ticks for the active domain.
+   * **10** is bold; goal is flagged with a labeled **Answer** chip.
+   * **Bunny** `🐰` sits at the current value and moves smoothly each step.
+   * **Per‑jump highlights** remain visible; each step is labeled `+1` or `−1` and colored by purpose (ten vs answer).
+   * **Cumulative bar** above highlights shows total progress (`+k` grows left→right in Count up; `−k` grows right→left in Count down). Hidden when `k = 0`.
+
+6. **Step controls (bottom block)**
+
+   * **Single step only:** `+1` in Count up, `−1` in Count down. (±5 removed.)
+   * **Reset** to clear progress.
+   * Buttons have subtle ripple/press feedback.
+
+7. **Tip text**: Reinforces the two teachable moments.
+
+---
+
+## 3) Game Mechanics & Logic
+
+### 3.1 Problem & Mode
+
+* Inputs: `a` (minuend), `b` (subtrahend), integers `0–100`, enforced `a ≥ b`.
+* Mode: `up` or `down`.
+* **Answer**: `ans = a − b`.
+
+### 3.2 Domains
+
+* **Count up:** domain = `[b .. a]`
+
+  * Start at **b**, move right by `+1`.
+  * **Answer flag** at **a**.
+  * **Ten‑milestone** considered if `b < 10 < a`.
+* **Count down:** domain = `[ans .. a]`
+
+  * Start at **a**, move left by `−1`.
+  * **Answer flag** at **ans**.
+  * **Ten‑milestone** considered if `ans < 10 < a`.
+
+### 3.3 Progress state
+
+* `prog` = magnitude counted so far, `0 ≤ prog ≤ ans`.
+* Current value:
+
+  * `up`: `b + prog`
+  * `down`: `a − prog`
+* Live equation reflects `prog` continuously.
+
+### 3.4 Milestones
+
+* **To Ten:**
+
+  * `up`: `toTen = clamp(10 − b, 0, ans)`
+  * `down`: `toTen = clamp(a − 10, 0, ans)`
+  * Only tracked if **10 is strictly between** endpoints.
+  * When `prog ≥ toTen`, Step‑1 is checked and ✅ chip persists. A soft glow/burst animates at the 10 tick (once).
+* **To Answer:** when `prog = ans`:
+
+  * Step‑2 checked; 🎉 chip persists.
+  * Main equation shows numeric answer.
+  * A small burst animates at the goal.
+
+### 3.5 Highlights & Cumulative Bar
+
+* Each click paints a **highlight segment** for that step:
+
+  * If the step crosses **10**, split and paint **two** segments.
+  * **Color coding:**
+
+    * Toward 10 → soft purple.
+    * From 10 to goal (or when 10 isn’t in range) → soft amber.
+* **Cumulative bar:**
+
+  * Count up: fills left→right from `b` to `b + prog`, label `+k`.
+  * Count down: fills right→left from `a` to `a − prog`, label `−k`.
+  * Hidden when `k = 0` (avoids `−0`/`+0`).
+
+### 3.6 Controls & Behavior
+
+* Step control is **±1 only** (sign flips by mode).
+* Reset clears `prog` and all highlight/cumulative visuals; preserves the equation.
+* Changing mode re‑renders the domain and resets progress.
+
+---
+
+## 4) Visual & Interaction Details
+
+### 4.1 Answer Chip Polish
+
+* **Z‑index layering** (top → bottom):
+
+  * Flags (Answer chip) — z=5
+  * Bunny hopper — z=4
+  * Cumulative bar — z=3
+  * Highlight bars — z=2
+* **Readability halo**: white ring + soft shadow around the chip to keep it legible above bars.
+* **Anchor stem**: thin green line from the chip to the exact tick for visual anchoring.
+
+### 4.2 Micro‑interactions
+
+* Buttons press slightly and show a fast, subtle ripple.
+* Ten and answer bursts are quick and non‑distracting.
+
+### 4.3 Accessibility
+
+* Large type for the equation; consistent answer font size.
+* Keyboard navigation on all buttons; visible focus styles.
+* `aria-live="polite"` on equation area and celebration text.
+* Labels on steps (`+1`/`−1`) ensure color is not the sole cue.
+
+### 4.4 Responsiveness
+
+* Works at phone widths (≥320px) through desktop.
+* Ticks, flags, highlights, and cumulative bar recompute positions on resize.
+
+---
+
+## 5) Technical Notes
+
+* Single self‑contained HTML file (inline CSS/JS), no external libraries.
+* Script initializes under `DOMContentLoaded`.
+* Designed for Google Sites **Embed → Embed Code** block.
+* Random generator: range 0–20 for quick facts, clamped to ensure `a ≥ b` and avoid `a = b` duplicates.
+
+---
+
+## 6) Edge Cases & Rules
+
+* If 10 is not between domain endpoints, Step‑1 is **hidden**; only Step‑2 shows.
+* If `b = 10` in Count up or `a = 10` in Count down, `toTen = 0` (Step‑1 immediately complete if shown by rule).
+* Steps never exceed the goal: last segment truncates to fit; `prog` is clamped.
+* Count down cumulative bar **starts empty** (no `−0`) and grows right→left.
+
+---
+
+## 7) Acceptance Tests (QA)
+
+> The current build exposes a **Run Quick Tests** panel that logs the results below. Do not modify existing tests unless they are incorrect.
+
+**T1. Count down domain & flag** — `12 − 1` (mode: down)
+
+* Domain `[11..12]`, Answer flag at 11, bunny starts at 12.
+
+**T2. Count down cumulative zero** — `12 − 1`
+
+* After reset, cumulative is empty; after one step, label is `−1`.
+
+**T3. Count up domain** — `14 − 6` (mode: up)
+
+* Domain `[6..14]`.
+
+**T4. No Ten milestone** — `20 − 18` (mode: up)
+
+* `tenInRange = false`.
+
+**T5. Answer celebration (down)** — `14 − 6` (mode: down)
+
+* After 6 steps, answer celebration visible.
+
+**T6. No layout shift on chips** — `14 − 6` (mode: up)
+
+* Progress panel height constant before/after milestones.
+
+### Additional Tests (to add)
+
+**T7. Answer chip layering**
+
+* While cumulative/step highlights overlap near the goal, the Answer chip remains readable (z‑order above, halo visible).
+
+**T8. Mode switch re-render**
+
+* Start `14 − 6` in Count up, take 3 steps, switch to Count down → domain becomes `[8..14]`, bunny at 14, button label becomes `−1`, progress reset.
+
+**T9. Ten split segment**
+
+* `9 − 2` (up): first click paints `+1` purple (9→10), subsequent clicks amber (10→11...).
+
+**T10. Cumulative hidden at zero**
+
+* Any equation: immediately after reset, no cumulative bar; after first step, bar appears with correct sign and direction.
+
+**T11. Answer flag placement (up vs down)**
+
+* `17 − 10` (up): flag at 17; `17 − 10` (down): flag at 7.
+
+**T12. Resize reflow**
+
+* With existing highlights, resize viewport: bars, bunny, ticks, and flags keep alignment; no drift.
+
+---
+
+## 8) Copy & Terminology
+
+* Always use **Count** (not *Build*): *Count up/down to 10*, *Count up/down to the answer*.
+* Step labels are `+1` in Count up, `−1` in Count down.
+* 10 is bold on the number line (no extra icon).
+
+---
+
+## 9) Future Enhancements (optional)
+
+* Optional teacher toggle to enable ±5.
+* Small notch/avoidance in cumulative bar so it curves around the Answer chip.
+* Sound effects (toggleable).
+* Prebuilt fact sets / mastery tracking (local only).
